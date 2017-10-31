@@ -145,7 +145,7 @@ region_country_count <- indicator_region %>%
 
 indicator_meta <- indicator_decade %>%
   full_join(indicator_region) %>%
-  mutate_all(function(x) ifelse(is.na(x), 0, x)) %>%
+  mutate_all(funs(coalesce(., 0))) %>%
   left_join(wdi_series %>% select(`Series Code`, `Indicator Name`), by = c("Indicator Code" = "Series Code"))
 
 library(htmltools)
@@ -153,7 +153,7 @@ make_decade <- function(decade, countries, country_count) {
   prop <- countries / country_count
   src <- paste0(
     "images/",
-    if (prop < 0.2) "low" else if (prop > 0.8) "high" else "medium",
+    if (prop == 0.0) "zero" else if (prop < 0.2) "low" else if (prop > 0.8) "high" else "medium",
     "_time.png"
   )
   tags$img(src = src, title = paste0(decade, "s: ", countries, " countries available"), width=16, height=16)
@@ -163,7 +163,7 @@ make_region <- function(region_code, region, countries, region_country_count) {
   prop <- countries / region_country_count
   src <- paste0(
     "images/",
-    if (prop < 0.2) "low" else if (prop > 0.8) "high" else "medium",
+    if (prop == 0.0) "zero" else if (prop < 0.2) "low" else if (prop > 0.8) "high" else "medium",
     "_",
     region_code,
     ".png"
@@ -174,7 +174,7 @@ make_region <- function(region_code, region, countries, region_country_count) {
 make_indicator <- function(df) {
   tags$tr(
     tags$td(df$`Indicator Name`),
-    tags$td(df$`Indicator Code`),
+    tags$td(tags$a(href=paste0("//data.worldbank.org/indicator/", df$`Indicator Code`), df$`Indicator Code`)),
     tags$td(
       make_decade(1960, df$`1960`, country_count),
       make_decade(1970, df$`1970`, country_count),
